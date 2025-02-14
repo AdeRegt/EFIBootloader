@@ -11,6 +11,3 @@ all:
 	$(MAKE) -C origin/gnuefi clean
 	$(MAKE) -C origin/inc clean
 	$(MAKE) -C origin/lib clean
-	rm origin/x86_64/gnuefi/gnu-efi.pc
-	rm origin/gnuefi/gnu-efi.pc
-	
