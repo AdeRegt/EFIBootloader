@@ -135,17 +135,8 @@ Framebuffer framebuffer;
 Framebuffer* InitializeGOP(){
 	EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
-	EFI_STATUS status;
 
-	status = uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void**)&gop);
-	if(EFI_ERROR(status)){
-		Print(L"Unable to locate GOP\n\r");
-		return NULL;
-	}
-	else
-	{
-		Print(L"GOP located\n\r");
-	}
+	uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void**)&gop);
 
 	framebuffer.BaseAddress = (void*)(uint64_t)gop->Mode->FrameBufferBase;
 	framebuffer.BufferSize = gop->Mode->FrameBufferSize;
@@ -241,15 +232,8 @@ void* FindTable(SDTHeader* sdtHeader, char* signature){
 
 EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	InitializeLib(ImageHandle, SystemTable);
-	// Print(L"Goodbye cruel world! \n\r");for(;;);
 
-	EFI_FILE* Kernel = LoadFile(NULL, L"kernel64.sys", ImageHandle, SystemTable);
-	if (Kernel == NULL){
-		Print(L"Could not load kernel \n\r");for(;;);
-	}
-	else{
-		Print(L"Kernel Loaded Successfully \n\r");
-	}
+	EFI_FILE* Kernel = LoadFile(NULL, u"kernel64.sys", ImageHandle, SystemTable);
 
 	Elf64_Ehdr header;
 	{
@@ -261,22 +245,6 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 
 		UINTN size = sizeof(header);
 		Kernel->Read(Kernel, &size, &header);
-	}
-
-	if (
-		memcmp(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0 ||
-		header.e_ident[EI_CLASS] != ELFCLASS64 ||
-		header.e_ident[EI_DATA] != ELFDATA2LSB ||
-		header.e_type != ET_EXEC ||
-		header.e_machine != EM_X86_64 ||
-		header.e_version != EV_CURRENT
-	)
-	{
-		Print(L"kernel format is bad\r\n");for(;;);
-	}
-	else
-	{
-		Print(L"kernel header successfully verified\r\n");
 	}
 
 	Elf64_Phdr* phdrs;
@@ -308,8 +276,6 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 		}
 	}
 
-	// Print(L"Kernel Loaded\n\r");
-
 
 	Framebuffer* newBuffer = InitializeGOP();
 
@@ -338,8 +304,6 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	bootInfo.memory_info = (MemoryInfo*) &mi;
 	bootInfo.rsdp = NULL;
 
-
-	Print(L"KernelStart: %x \n",KernelStart);
 	EFI_STATUS ebs = SystemTable->BootServices->ExitBootServices(ImageHandle, MapKey);
 	if(ebs!=EFI_SUCCESS)
 	{
